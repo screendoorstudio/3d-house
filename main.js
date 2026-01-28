@@ -341,6 +341,10 @@ window.addEventListener('resize', () => {
 const people = [];
 const personColors = [0x3498db, 0xe74c3c, 0x2ecc71, 0x9b59b6, 0xf39c12];
 
+// Floor levels
+const GROUND_FLOOR = 0;
+const SECOND_FLOOR = floorHeight;
+
 function createPerson(color) {
     const group = new THREE.Group();
 
@@ -389,8 +393,9 @@ function createPerson(color) {
     rightArm.castShadow = true;
     group.add(rightArm);
 
-    // Mark as draggable
+    // Track floor level and draggable state
     group.userData.isDraggable = true;
+    group.userData.floorLevel = GROUND_FLOOR;
 
     return group;
 }
@@ -406,20 +411,29 @@ const personPositions = [
 
 personPositions.forEach((pos, i) => {
     const person = createPerson(personColors[i]);
-    person.position.set(pos.x, 0, pos.z);
+    person.position.set(pos.x, GROUND_FLOOR, pos.z);
     person.rotation.y = Math.random() * Math.PI * 2;
     scene.add(person);
     people.push(person);
 });
 
+// Function to move person to a floor
+function movePersonToFloor(person, floorLevel) {
+    person.userData.floorLevel = floorLevel;
+    person.position.y = floorLevel;
+}
+
 // === DRAG CONTROLS ===
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const secondFloorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -SECOND_FLOOR);
 const intersection = new THREE.Vector3();
 
 let selectedPerson = null;
 let isDragging = false;
+let currentDragPlane = groundPlane;
+let lastClickTime = 0;
 
 // Collect all meshes from people for raycasting
 const draggableMeshes = [];
@@ -447,9 +461,30 @@ function onPointerDown(event) {
     if (intersects.length > 0) {
         const personGroup = intersects[0].object.userData.personGroup;
         if (personGroup) {
+            const now = Date.now();
+
+            // Check for double-click (within 300ms)
+            if (now - lastClickTime < 300 && selectedPerson === null) {
+                // Double-click: toggle floor
+                const currentFloor = personGroup.userData.floorLevel;
+                const newFloor = currentFloor === GROUND_FLOOR ? SECOND_FLOOR : GROUND_FLOOR;
+                movePersonToFloor(personGroup, newFloor);
+                lastClickTime = 0;
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+
+            lastClickTime = now;
             selectedPerson = personGroup;
             isDragging = true;
             controls.enabled = false;
+
+            // Set drag plane based on person's current floor
+            currentDragPlane = personGroup.userData.floorLevel === GROUND_FLOOR
+                ? groundPlane
+                : secondFloorPlane;
+
             renderer.domElement.style.cursor = 'grabbing';
             event.preventDefault();
             event.stopPropagation();
@@ -462,7 +497,7 @@ function onPointerMove(event) {
     raycaster.setFromCamera(mouse, camera);
 
     if (isDragging && selectedPerson) {
-        if (raycaster.ray.intersectPlane(plane, intersection)) {
+        if (raycaster.ray.intersectPlane(currentDragPlane, intersection)) {
             selectedPerson.position.x = intersection.x;
             selectedPerson.position.z = intersection.z;
         }
