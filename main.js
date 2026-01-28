@@ -99,18 +99,32 @@ const wallEdges = new THREE.LineSegments(wallEdgesGeometry, wallEdgesMaterial);
 wallEdges.position.y = totalHeight / 2;
 house.add(wallEdges);
 
-// Floor divider (between 1st and 2nd floor)
-const floorGeometry = new THREE.PlaneGeometry(houseWidth - 0.1, houseDepth - 0.1);
-const floorMaterial = new THREE.MeshBasicMaterial({
-    color: 0x3B82F6,
+// Second floor (between 1st and 2nd floor)
+const secondFloorGeometry = new THREE.PlaneGeometry(houseWidth - 0.2, houseDepth - 0.2);
+const secondFloorMaterial = new THREE.MeshStandardMaterial({
+    color: 0x8B5A2B,
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.5,
     side: THREE.DoubleSide
 });
-const floor2 = new THREE.Mesh(floorGeometry, floorMaterial);
-floor2.rotation.x = Math.PI / 2;
-floor2.position.y = floorHeight;
-house.add(floor2);
+const secondFloorMesh = new THREE.Mesh(secondFloorGeometry, secondFloorMaterial);
+secondFloorMesh.rotation.x = -Math.PI / 2;
+secondFloorMesh.position.y = floorHeight;
+house.add(secondFloorMesh);
+
+// Floor edge outline
+const floorEdgeGeometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(houseWidth - 0.2, 0.05, houseDepth - 0.2));
+const floorEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x5D3A1A });
+const floorEdges = new THREE.LineSegments(floorEdgeGeometry, floorEdgeMaterial);
+floorEdges.position.y = floorHeight;
+house.add(floorEdges);
+
+// Add a subtle grid pattern on the floor
+const gridHelper = new THREE.GridHelper(Math.min(houseWidth, houseDepth) - 0.5, 6, 0x6B4423, 0x6B4423);
+gridHelper.position.y = floorHeight + 0.01;
+gridHelper.material.transparent = true;
+gridHelper.material.opacity = 0.3;
+house.add(gridHelper);
 
 // Roof
 const roofHeight = 2.5;
