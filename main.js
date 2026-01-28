@@ -368,71 +368,72 @@ const intersection = new THREE.Vector3();
 let selectedPerson = null;
 let isDragging = false;
 
-function onMouseDown(event) {
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+// Collect all meshes from people for raycasting
+const draggableMeshes = [];
+people.forEach(person => {
+    person.traverse(child => {
+        if (child.isMesh) {
+            child.userData.personGroup = person;
+            draggableMeshes.push(child);
+        }
+    });
+});
 
+function getMousePosition(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+}
+
+function onPointerDown(event) {
+    getMousePosition(event);
     raycaster.setFromCamera(mouse, camera);
 
-    // Check intersection with people
-    const intersects = raycaster.intersectObjects(people, true);
+    const intersects = raycaster.intersectObjects(draggableMeshes, false);
 
     if (intersects.length > 0) {
-        // Find the parent group (the person)
-        let obj = intersects[0].object;
-        while (obj.parent && !obj.userData.isDraggable) {
-            obj = obj.parent;
-        }
-
-        if (obj.userData.isDraggable) {
-            selectedPerson = obj;
+        const personGroup = intersects[0].object.userData.personGroup;
+        if (personGroup) {
+            selectedPerson = personGroup;
             isDragging = true;
             controls.enabled = false;
-            document.body.style.cursor = 'grabbing';
+            renderer.domElement.style.cursor = 'grabbing';
+            event.preventDefault();
+            event.stopPropagation();
         }
     }
 }
 
-function onMouseMove(event) {
-    if (!isDragging || !selectedPerson) return;
-
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
+function onPointerMove(event) {
+    getMousePosition(event);
     raycaster.setFromCamera(mouse, camera);
 
-    if (raycaster.ray.intersectPlane(plane, intersection)) {
-        selectedPerson.position.x = intersection.x;
-        selectedPerson.position.z = intersection.z;
+    if (isDragging && selectedPerson) {
+        if (raycaster.ray.intersectPlane(plane, intersection)) {
+            selectedPerson.position.x = intersection.x;
+            selectedPerson.position.z = intersection.z;
+        }
+        event.preventDefault();
+    } else {
+        // Hover detection
+        const intersects = raycaster.intersectObjects(draggableMeshes, false);
+        renderer.domElement.style.cursor = intersects.length > 0 ? 'grab' : 'auto';
     }
 }
 
-function onMouseUp() {
+function onPointerUp(event) {
     if (isDragging) {
         isDragging = false;
         selectedPerson = null;
         controls.enabled = true;
-        document.body.style.cursor = 'auto';
+        renderer.domElement.style.cursor = 'auto';
     }
 }
 
-// Update cursor on hover
-function onMouseHover(event) {
-    if (isDragging) return;
-
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(people, true);
-
-    document.body.style.cursor = intersects.length > 0 ? 'grab' : 'auto';
-}
-
-window.addEventListener('mousedown', onMouseDown);
-window.addEventListener('mousemove', onMouseMove);
-window.addEventListener('mousemove', onMouseHover);
-window.addEventListener('mouseup', onMouseUp);
+renderer.domElement.addEventListener('pointerdown', onPointerDown);
+renderer.domElement.addEventListener('pointermove', onPointerMove);
+renderer.domElement.addEventListener('pointerup', onPointerUp);
+renderer.domElement.addEventListener('pointerleave', onPointerUp);
 
 // Animation loop
 function animate() {
