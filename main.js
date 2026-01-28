@@ -1,6 +1,6 @@
 // Scene setup
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB); // Sky blue
+scene.background = new THREE.Color(0xF0F4F8); // Light blueprint background
 
 // Camera
 const camera = new THREE.PerspectiveCamera(
@@ -43,16 +43,34 @@ directionalLight.shadow.camera.bottom = -20;
 scene.add(directionalLight);
 
 // Materials
-const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xF5DEB3 }); // Wheat color
-const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Saddle brown
-const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 }); // Dark brown
-const windowMaterial = new THREE.MeshStandardMaterial({
-    color: 0x87CEEB,
+const wallMaterial = new THREE.MeshStandardMaterial({
+    color: 0x4A90D9,
     transparent: true,
-    opacity: 0.7
+    opacity: 0.15,
+    side: THREE.DoubleSide
 });
-const windowFrameMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
-const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 }); // Forest green
+const wallWireframeMaterial = new THREE.MeshBasicMaterial({
+    color: 0x2563EB,
+    wireframe: true
+});
+const roofMaterial = new THREE.MeshStandardMaterial({
+    color: 0x1E40AF,
+    transparent: true,
+    opacity: 0.2,
+    side: THREE.DoubleSide
+});
+const roofWireframeMaterial = new THREE.MeshBasicMaterial({
+    color: 0x1E3A8A,
+    wireframe: true
+});
+const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Brown doors
+const windowMaterial = new THREE.MeshStandardMaterial({
+    color: 0x60A5FA,
+    transparent: true,
+    opacity: 0.5
+});
+const windowFrameMaterial = new THREE.MeshStandardMaterial({ color: 0x1E3A8A });
+const groundMaterial = new THREE.MeshStandardMaterial({ color: 0xE2E8F0 }); // Light gray ground
 
 // House dimensions
 const houseWidth = 8;
@@ -67,9 +85,32 @@ const house = new THREE.Group();
 const wallsGeometry = new THREE.BoxGeometry(houseWidth, totalHeight, houseDepth);
 const walls = new THREE.Mesh(wallsGeometry, wallMaterial);
 walls.position.y = totalHeight / 2;
-walls.castShadow = true;
-walls.receiveShadow = true;
 house.add(walls);
+
+// Wireframe overlay for walls
+const wallsWireframe = new THREE.Mesh(wallsGeometry, wallWireframeMaterial);
+wallsWireframe.position.y = totalHeight / 2;
+house.add(wallsWireframe);
+
+// Add edges for cleaner blueprint look
+const wallEdgesGeometry = new THREE.EdgesGeometry(wallsGeometry);
+const wallEdgesMaterial = new THREE.LineBasicMaterial({ color: 0x1E40AF, linewidth: 2 });
+const wallEdges = new THREE.LineSegments(wallEdgesGeometry, wallEdgesMaterial);
+wallEdges.position.y = totalHeight / 2;
+house.add(wallEdges);
+
+// Floor divider (between 1st and 2nd floor)
+const floorGeometry = new THREE.PlaneGeometry(houseWidth - 0.1, houseDepth - 0.1);
+const floorMaterial = new THREE.MeshBasicMaterial({
+    color: 0x3B82F6,
+    transparent: true,
+    opacity: 0.3,
+    side: THREE.DoubleSide
+});
+const floor2 = new THREE.Mesh(floorGeometry, floorMaterial);
+floor2.rotation.x = Math.PI / 2;
+floor2.position.y = floorHeight;
+house.add(floor2);
 
 // Roof
 const roofHeight = 2.5;
@@ -81,8 +122,20 @@ const roofGeometry = new THREE.ConeGeometry(
 const roof = new THREE.Mesh(roofGeometry, roofMaterial);
 roof.position.y = totalHeight + roofHeight / 2;
 roof.rotation.y = Math.PI / 4;
-roof.castShadow = true;
 house.add(roof);
+
+// Wireframe overlay for roof
+const roofWireframe = new THREE.Mesh(roofGeometry, roofWireframeMaterial);
+roofWireframe.position.y = totalHeight + roofHeight / 2;
+roofWireframe.rotation.y = Math.PI / 4;
+house.add(roofWireframe);
+
+// Roof edges
+const roofEdgesGeometry = new THREE.EdgesGeometry(roofGeometry);
+const roofEdges = new THREE.LineSegments(roofEdgesGeometry, wallEdgesMaterial);
+roofEdges.position.y = totalHeight + roofHeight / 2;
+roofEdges.rotation.y = Math.PI / 4;
+house.add(roofEdges);
 
 // Helper function to create a window
 function createWindow(width, height) {
