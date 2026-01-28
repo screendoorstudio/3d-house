@@ -431,11 +431,275 @@ personPositions.forEach((pos, i) => {
     people.push(person);
 });
 
-// Function to move person to a floor
-function movePersonToFloor(person, floorLevel) {
-    person.userData.floorLevel = floorLevel;
-    person.position.y = floorLevel;
+// Function to move object to a floor
+function moveObjectToFloor(obj, floorLevel) {
+    obj.userData.floorLevel = floorLevel;
+    obj.position.y = floorLevel;
 }
+
+// === FURNITURE ===
+const furniture = [];
+
+// Furniture materials
+const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+const darkWoodMaterial = new THREE.MeshStandardMaterial({ color: 0x5D3A1A });
+const couchMaterial = new THREE.MeshStandardMaterial({ color: 0x4A6741 });
+const bedMaterial = new THREE.MeshStandardMaterial({ color: 0x6B8E9F });
+const tableclothMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFAF0 });
+
+// Create a sofa
+function createSofa() {
+    const group = new THREE.Group();
+
+    // Base
+    const baseGeom = new THREE.BoxGeometry(2, 0.4, 0.8);
+    const base = new THREE.Mesh(baseGeom, couchMaterial);
+    base.position.y = 0.2;
+    group.add(base);
+
+    // Back
+    const backGeom = new THREE.BoxGeometry(2, 0.6, 0.15);
+    const back = new THREE.Mesh(backGeom, couchMaterial);
+    back.position.set(0, 0.5, -0.33);
+    group.add(back);
+
+    // Arms
+    const armGeom = new THREE.BoxGeometry(0.15, 0.5, 0.8);
+    const leftArm = new THREE.Mesh(armGeom, couchMaterial);
+    leftArm.position.set(-0.93, 0.35, 0);
+    group.add(leftArm);
+
+    const rightArm = new THREE.Mesh(armGeom, couchMaterial);
+    rightArm.position.set(0.93, 0.35, 0);
+    group.add(rightArm);
+
+    group.userData.isDraggable = true;
+    group.userData.floorLevel = GROUND_FLOOR;
+    group.userData.type = 'furniture';
+    return group;
+}
+
+// Create a table
+function createTable() {
+    const group = new THREE.Group();
+
+    // Tabletop
+    const topGeom = new THREE.BoxGeometry(1.2, 0.08, 0.8);
+    const top = new THREE.Mesh(topGeom, woodMaterial);
+    top.position.y = 0.75;
+    group.add(top);
+
+    // Legs
+    const legGeom = new THREE.BoxGeometry(0.08, 0.7, 0.08);
+    const positions = [
+        [-0.5, 0.35, -0.3],
+        [0.5, 0.35, -0.3],
+        [-0.5, 0.35, 0.3],
+        [0.5, 0.35, 0.3]
+    ];
+    positions.forEach(pos => {
+        const leg = new THREE.Mesh(legGeom, darkWoodMaterial);
+        leg.position.set(...pos);
+        group.add(leg);
+    });
+
+    group.userData.isDraggable = true;
+    group.userData.floorLevel = GROUND_FLOOR;
+    group.userData.type = 'furniture';
+    return group;
+}
+
+// Create a chair
+function createChair() {
+    const group = new THREE.Group();
+
+    // Seat
+    const seatGeom = new THREE.BoxGeometry(0.5, 0.06, 0.5);
+    const seat = new THREE.Mesh(seatGeom, woodMaterial);
+    seat.position.y = 0.45;
+    group.add(seat);
+
+    // Back
+    const backGeom = new THREE.BoxGeometry(0.5, 0.5, 0.06);
+    const back = new THREE.Mesh(backGeom, woodMaterial);
+    back.position.set(0, 0.73, -0.22);
+    group.add(back);
+
+    // Legs
+    const legGeom = new THREE.BoxGeometry(0.05, 0.42, 0.05);
+    const positions = [
+        [-0.2, 0.21, -0.2],
+        [0.2, 0.21, -0.2],
+        [-0.2, 0.21, 0.2],
+        [0.2, 0.21, 0.2]
+    ];
+    positions.forEach(pos => {
+        const leg = new THREE.Mesh(legGeom, darkWoodMaterial);
+        leg.position.set(...pos);
+        group.add(leg);
+    });
+
+    group.userData.isDraggable = true;
+    group.userData.floorLevel = GROUND_FLOOR;
+    group.userData.type = 'furniture';
+    return group;
+}
+
+// Create a bed
+function createBed() {
+    const group = new THREE.Group();
+
+    // Frame
+    const frameGeom = new THREE.BoxGeometry(1.8, 0.3, 2.2);
+    const frame = new THREE.Mesh(frameGeom, darkWoodMaterial);
+    frame.position.y = 0.15;
+    group.add(frame);
+
+    // Mattress
+    const mattressGeom = new THREE.BoxGeometry(1.6, 0.2, 2);
+    const mattress = new THREE.Mesh(mattressGeom, bedMaterial);
+    mattress.position.y = 0.4;
+    group.add(mattress);
+
+    // Headboard
+    const headboardGeom = new THREE.BoxGeometry(1.8, 0.8, 0.1);
+    const headboard = new THREE.Mesh(headboardGeom, darkWoodMaterial);
+    headboard.position.set(0, 0.55, -1.05);
+    group.add(headboard);
+
+    // Pillow
+    const pillowGeom = new THREE.BoxGeometry(0.5, 0.12, 0.35);
+    const pillowMat = new THREE.MeshStandardMaterial({ color: 0xFFFFF0 });
+    const pillow = new THREE.Mesh(pillowGeom, pillowMat);
+    pillow.position.set(0, 0.56, -0.7);
+    group.add(pillow);
+
+    group.userData.isDraggable = true;
+    group.userData.floorLevel = SECOND_FLOOR;
+    group.userData.type = 'furniture';
+    return group;
+}
+
+// Create a bookshelf
+function createBookshelf() {
+    const group = new THREE.Group();
+
+    // Main frame
+    const frameGeom = new THREE.BoxGeometry(1, 1.8, 0.3);
+    const frame = new THREE.Mesh(frameGeom, woodMaterial);
+    frame.position.y = 0.9;
+    group.add(frame);
+
+    // Shelves
+    const shelfGeom = new THREE.BoxGeometry(0.9, 0.04, 0.28);
+    [0.4, 0.8, 1.2, 1.6].forEach(y => {
+        const shelf = new THREE.Mesh(shelfGeom, darkWoodMaterial);
+        shelf.position.y = y;
+        group.add(shelf);
+    });
+
+    // Some books
+    const bookColors = [0xB22222, 0x228B22, 0x4169E1, 0xDAA520];
+    bookColors.forEach((color, i) => {
+        const bookGeom = new THREE.BoxGeometry(0.15, 0.25, 0.2);
+        const bookMat = new THREE.MeshStandardMaterial({ color });
+        const book = new THREE.Mesh(bookGeom, bookMat);
+        book.position.set(-0.3 + i * 0.2, 0.52, 0);
+        group.add(book);
+    });
+
+    group.userData.isDraggable = true;
+    group.userData.floorLevel = GROUND_FLOOR;
+    group.userData.type = 'furniture';
+    return group;
+}
+
+// Create dining table with cloth
+function createDiningTable() {
+    const group = new THREE.Group();
+
+    // Tabletop
+    const topGeom = new THREE.CylinderGeometry(0.7, 0.7, 0.08, 16);
+    const top = new THREE.Mesh(topGeom, woodMaterial);
+    top.position.y = 0.75;
+    group.add(top);
+
+    // Tablecloth hint
+    const clothGeom = new THREE.CylinderGeometry(0.72, 0.75, 0.02, 16);
+    const cloth = new THREE.Mesh(clothGeom, tableclothMaterial);
+    cloth.position.y = 0.79;
+    group.add(cloth);
+
+    // Center pedestal
+    const pedestalGeom = new THREE.CylinderGeometry(0.15, 0.2, 0.65, 8);
+    const pedestal = new THREE.Mesh(pedestalGeom, darkWoodMaterial);
+    pedestal.position.y = 0.38;
+    group.add(pedestal);
+
+    // Base
+    const baseGeom = new THREE.CylinderGeometry(0.4, 0.4, 0.06, 16);
+    const base = new THREE.Mesh(baseGeom, darkWoodMaterial);
+    base.position.y = 0.03;
+    group.add(base);
+
+    group.userData.isDraggable = true;
+    group.userData.floorLevel = GROUND_FLOOR;
+    group.userData.type = 'furniture';
+    return group;
+}
+
+// Place furniture in the house
+// Ground floor
+const sofa = createSofa();
+sofa.position.set(-2, GROUND_FLOOR, 0);
+sofa.rotation.y = Math.PI / 2;
+scene.add(sofa);
+furniture.push(sofa);
+
+const table = createTable();
+table.position.set(2, GROUND_FLOOR, 1);
+scene.add(table);
+furniture.push(table);
+
+const chair1 = createChair();
+chair1.position.set(2, GROUND_FLOOR, 0.2);
+scene.add(chair1);
+furniture.push(chair1);
+
+const chair2 = createChair();
+chair2.position.set(2, GROUND_FLOOR, 1.8);
+chair2.rotation.y = Math.PI;
+scene.add(chair2);
+furniture.push(chair2);
+
+const bookshelf = createBookshelf();
+bookshelf.position.set(2.5, GROUND_FLOOR, -1.5);
+scene.add(bookshelf);
+furniture.push(bookshelf);
+
+const diningTable = createDiningTable();
+diningTable.position.set(-1.5, GROUND_FLOOR, 1.5);
+scene.add(diningTable);
+furniture.push(diningTable);
+
+// Second floor
+const bed = createBed();
+bed.position.set(0, SECOND_FLOOR, -1);
+scene.add(bed);
+furniture.push(bed);
+
+const bedsideTable = createTable();
+bedsideTable.position.set(2, SECOND_FLOOR, -1);
+bedsideTable.scale.set(0.6, 0.7, 0.6);
+moveObjectToFloor(bedsideTable, SECOND_FLOOR);
+scene.add(bedsideTable);
+furniture.push(bedsideTable);
+
+const chair3 = createChair();
+chair3.position.set(-2, SECOND_FLOOR, 1);
+moveObjectToFloor(chair3, SECOND_FLOOR);
+scene.add(chair3);
+furniture.push(chair3);
 
 // === DRAG CONTROLS ===
 const raycaster = new THREE.Raycaster();
@@ -444,17 +708,29 @@ const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const secondFloorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -SECOND_FLOOR);
 const intersection = new THREE.Vector3();
 
-let selectedPerson = null;
+let selectedObject = null;
 let isDragging = false;
 let currentDragPlane = groundPlane;
 let lastClickTime = 0;
 
-// Collect all meshes from people for raycasting
+// Collect all meshes from people and furniture for raycasting
 const draggableMeshes = [];
-people.forEach(person => {
-    person.traverse(child => {
+
+// Add people meshes
+people.forEach(obj => {
+    obj.traverse(child => {
         if (child.isMesh) {
-            child.userData.personGroup = person;
+            child.userData.draggableGroup = obj;
+            draggableMeshes.push(child);
+        }
+    });
+});
+
+// Add furniture meshes
+furniture.forEach(obj => {
+    obj.traverse(child => {
+        if (child.isMesh) {
+            child.userData.draggableGroup = obj;
             draggableMeshes.push(child);
         }
     });
@@ -473,16 +749,16 @@ function onPointerDown(event) {
     const intersects = raycaster.intersectObjects(draggableMeshes, false);
 
     if (intersects.length > 0) {
-        const personGroup = intersects[0].object.userData.personGroup;
-        if (personGroup) {
+        const draggableGroup = intersects[0].object.userData.draggableGroup;
+        if (draggableGroup) {
             const now = Date.now();
 
             // Check for double-click (within 300ms)
-            if (now - lastClickTime < 300 && selectedPerson === null) {
+            if (now - lastClickTime < 300 && selectedObject === null) {
                 // Double-click: toggle floor
-                const currentFloor = personGroup.userData.floorLevel;
+                const currentFloor = draggableGroup.userData.floorLevel;
                 const newFloor = currentFloor === GROUND_FLOOR ? SECOND_FLOOR : GROUND_FLOOR;
-                movePersonToFloor(personGroup, newFloor);
+                moveObjectToFloor(draggableGroup, newFloor);
                 lastClickTime = 0;
                 event.preventDefault();
                 event.stopPropagation();
@@ -490,12 +766,12 @@ function onPointerDown(event) {
             }
 
             lastClickTime = now;
-            selectedPerson = personGroup;
+            selectedObject = draggableGroup;
             isDragging = true;
             controls.enabled = false;
 
-            // Set drag plane based on person's current floor
-            currentDragPlane = personGroup.userData.floorLevel === GROUND_FLOOR
+            // Set drag plane based on object's current floor
+            currentDragPlane = draggableGroup.userData.floorLevel === GROUND_FLOOR
                 ? groundPlane
                 : secondFloorPlane;
 
@@ -510,10 +786,10 @@ function onPointerMove(event) {
     getMousePosition(event);
     raycaster.setFromCamera(mouse, camera);
 
-    if (isDragging && selectedPerson) {
+    if (isDragging && selectedObject) {
         if (raycaster.ray.intersectPlane(currentDragPlane, intersection)) {
-            selectedPerson.position.x = intersection.x;
-            selectedPerson.position.z = intersection.z;
+            selectedObject.position.x = intersection.x;
+            selectedObject.position.z = intersection.z;
         }
         event.preventDefault();
     } else {
@@ -526,7 +802,7 @@ function onPointerMove(event) {
 function onPointerUp(event) {
     if (isDragging) {
         isDragging = false;
-        selectedPerson = null;
+        selectedObject = null;
         controls.enabled = true;
         renderer.domElement.style.cursor = 'auto';
     }
