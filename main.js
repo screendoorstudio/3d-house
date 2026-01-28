@@ -284,6 +284,156 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+// === PEOPLE ===
+const people = [];
+const personColors = [0x3498db, 0xe74c3c, 0x2ecc71, 0x9b59b6, 0xf39c12];
+
+function createPerson(color) {
+    const group = new THREE.Group();
+
+    // Body (cylinder)
+    const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.35, 1.2, 8);
+    const bodyMaterial = new THREE.MeshStandardMaterial({ color: color });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.position.y = 0.8;
+    body.castShadow = true;
+    group.add(body);
+
+    // Head (sphere)
+    const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+    const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xFFDBAC });
+    const head = new THREE.Mesh(headGeometry, skinMaterial);
+    head.position.y = 1.65;
+    head.castShadow = true;
+    group.add(head);
+
+    // Legs (two cylinders)
+    const legGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.6, 8);
+    const legMaterial = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+
+    const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+    leftLeg.position.set(-0.15, 0.3, 0);
+    leftLeg.castShadow = true;
+    group.add(leftLeg);
+
+    const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+    rightLeg.position.set(0.15, 0.3, 0);
+    rightLeg.castShadow = true;
+    group.add(rightLeg);
+
+    // Arms (two cylinders)
+    const armGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5, 8);
+
+    const leftArm = new THREE.Mesh(armGeometry, skinMaterial);
+    leftArm.position.set(-0.4, 1.1, 0);
+    leftArm.rotation.z = 0.3;
+    leftArm.castShadow = true;
+    group.add(leftArm);
+
+    const rightArm = new THREE.Mesh(armGeometry, skinMaterial);
+    rightArm.position.set(0.4, 1.1, 0);
+    rightArm.rotation.z = -0.3;
+    rightArm.castShadow = true;
+    group.add(rightArm);
+
+    // Mark as draggable
+    group.userData.isDraggable = true;
+
+    return group;
+}
+
+// Create 5 people around the house
+const personPositions = [
+    { x: 6, z: 5 },
+    { x: -6, z: 4 },
+    { x: 7, z: -3 },
+    { x: -5, z: -5 },
+    { x: 0, z: 8 }
+];
+
+personPositions.forEach((pos, i) => {
+    const person = createPerson(personColors[i]);
+    person.position.set(pos.x, 0, pos.z);
+    person.rotation.y = Math.random() * Math.PI * 2;
+    scene.add(person);
+    people.push(person);
+});
+
+// === DRAG CONTROLS ===
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const intersection = new THREE.Vector3();
+
+let selectedPerson = null;
+let isDragging = false;
+
+function onMouseDown(event) {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    // Check intersection with people
+    const intersects = raycaster.intersectObjects(people, true);
+
+    if (intersects.length > 0) {
+        // Find the parent group (the person)
+        let obj = intersects[0].object;
+        while (obj.parent && !obj.userData.isDraggable) {
+            obj = obj.parent;
+        }
+
+        if (obj.userData.isDraggable) {
+            selectedPerson = obj;
+            isDragging = true;
+            controls.enabled = false;
+            document.body.style.cursor = 'grabbing';
+        }
+    }
+}
+
+function onMouseMove(event) {
+    if (!isDragging || !selectedPerson) return;
+
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    if (raycaster.ray.intersectPlane(plane, intersection)) {
+        selectedPerson.position.x = intersection.x;
+        selectedPerson.position.z = intersection.z;
+    }
+}
+
+function onMouseUp() {
+    if (isDragging) {
+        isDragging = false;
+        selectedPerson = null;
+        controls.enabled = true;
+        document.body.style.cursor = 'auto';
+    }
+}
+
+// Update cursor on hover
+function onMouseHover(event) {
+    if (isDragging) return;
+
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(people, true);
+
+    document.body.style.cursor = intersects.length > 0 ? 'grab' : 'auto';
+}
+
+window.addEventListener('mousedown', onMouseDown);
+window.addEventListener('mousemove', onMouseMove);
+window.addEventListener('mousemove', onMouseHover);
+window.addEventListener('mouseup', onMouseUp);
+
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
